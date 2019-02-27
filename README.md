@@ -90,7 +90,9 @@ Permission denied, please try again.
 user01@localhost's password: 
 Last failed login: Fri Feb 22 10:45:28 UTC 2019 from ::1 on ssh:notty
 There was 1 failed login attempt since the last successful login.
-
-
-
 klist -k krb5.keytab --> llistar un  fitxer de claus
+
+
+
+Clase 27/02/2019
+Hem creat un hostpam amb autenticacio a kerberos nom de la maquina k18:khostp
