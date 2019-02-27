@@ -1,25 +1,19 @@
-# SSHD Kerberitzat
+# Servidor SSH amb connexio a kerberos
 ## @edt ASIX M11-SAD Curs 2018-2019
 
-**edtasixm11/k18:sshd** Servidor SSHD *kerberitzat*. Servidor ssh que permet
-  l'accés d'usuaris locals i usuaris locals amb autenticació kerberos. El
-  servidor s'ha de dir sshd.edt.org.
+**raulbaena/k18:sshd** Servidor SSHD amb conexio amb kerberos. Servidor ssh que permet
+  l'accés d'usuaris locals i usuaris locals amb kerberos.
 
-Per fer que el servidor sshd sigui *kerberos aware* cal:
+Configuracio de servidor sshd:
 
  * instal·lar.hi el paquet krb5-workstation.
 
- * copiar el fitxerd e configuració kerberos client */etc/krb5.conf*.
+ * Copiar el fitxer krb5.conf ya configurat.
 
- * crear un principal al servidor kerberos coresponent al host sshd. En aquest cas concret es crea
-  una entrada *host/sshd.edt.org*.
+ * Hem de crear un principal per a que a l'hora de logarse un usuari kerberos pugui fer-ho sense l'utilitzacio de passwd.
 
- * propagar aquest principal (de host)  al keytab del servidor sshd. Aquí s'utilitza un mecanisme 
-  *pèssim*, des del client, desatesament, es connecta amb usuari i passwd (text pla) via *kadmin* al
-  servidor kerberos i exporta les claus del principal *host/sshd.edt.org* via *ktadd*.
+ * Configuració de fitxer sshd_config. Hem descomentat les seguents lineas
 
- * configurar el servidor sshd per permetre l'autenticació kerberos, cal modificar el fitxer de 
- configuració del servei */etc/ssh/sshd_config*:
 
 ```
 # Kerberos options
@@ -27,87 +21,68 @@ KerberosAuthentication yes
 KerberosTicketCleanup yes
 ```
 
-**Atenció:**
-
-Si el principal de host que s'ha creat al servidor kerberos és *host/sshd.edt.org* es podrà realitzar
-l'accés kerberitzat **només** si es connecta al servidor usant aquest hosname. És a dir, amb les ordres:
-```
-ssh user01@sshd.edt.org  (OK)
-ssh user01@localhost     (NO!)
-```
-La primera d'elles peermetrà l'accés kerberitzat, la segona no.
-
-
-Execució:
-```
-docker run --rm --name sshd.edt.org    -h sshd.edt.org    --net mynet -d edtasixm11/k18:sshd
-```
-
-### Accés kerberitzat / Accés normal
-
-Feu atenció al significat d'accés kerberitzat! Si l'usuari user01 és un usuari vàlid en el host sshd.edt.org
-(provingi el seu information privider de /etc/passwd o de ldap) i la seva autenticació és kerberos (el seu 
-password està desat al kerberos), en un accés kerberitzat, si l'usuari ja disposa de ticket podrà accedir
-al serveidor sshd sense cap password. **atenció** usualment quan això no va és causat per el keytab, no s'ha exportat
-bé, no s'ha creat bé, o no coincideixen els noms assignats al host.
-
-Exemple-1
-
-Des del propi container l'usuari local01, sense estar en posessió de cap ticket, realitza l'ordre *ssh user01@sshd.edt.org*,
-el servidor li demanarà el password, en tractar-se d'un usuari de *AP* kerberos, verificarà l'autebnticació contra el
-servidor kerberos (el *IP* l'ha obtingut de /etc/passwd).
-
-Exemple-2
-
-Des del propi container l'usuari local01 sol·licita un ticket de user02 amb l'ordre *kinit user02*. Si s'autentica 
-correctament amb el password de kerberos obté un tiket. Seguidament l'usuari local01 realitza l'ordre *ssh user01@sshd.edt.org*
-i conecta automàticament al servidor ssh sense que se li demnai el password.
-
-Perquè? perquè està jà en possesió d'un ticket kerberos vàlid que el servidor sshd verifica i li permet iniciar sessió
-ssh sense necessitat de demanar-li el password (similar a l'accés per clau pública).
-
+Exemple de configutació
 
 ```
-# ssh user01@172.21.0.3
-The authenticity of host '172.21.0.3 (172.21.0.3)' can't be established.
-ECDSA key fingerprint is SHA256:FakX5h5J4mbjss2v3b4F4vqPllFn+AWXLj7f8ivdeAs.
-ECDSA key fingerprint is MD5:bb:50:c9:26:1b:16:df:5c:91:b3:5a:b3:7d:69:82:7a.
-Are you sure you want to continue connecting (yes/no)? yes
-Warning: Permanently added '172.21.0.3' (ECDSA) to the list of known hosts.
-user01@172.21.0.3's password: kuser01
-Last failed login: Fri Feb 22 16:49:32 UTC 2019 from 172.21.0.1 on ssh:notty
+#       $OpenBSD: sshd_config,v 1.101 2017/03/14 07:19:07 djm Exp $
 
+# This is the sshd server system-wide configuration file.  See
+# sshd_config(5) for more information.
+
+# This sshd was compiled with PATH=/usr/local/bin:/usr/bin
+
+# The strategy used for options in the default sshd_config shipped with
+# OpenSSH is to specify options with their default value where
+# possible, but leave them commented.  Uncommented options override the
+# default value.
+
+# If you want to change the port on a SELinux system, you have to tell
+# SELinux about this change.
+# semanage port -a -t ssh_port_t -p tcp #PORTNUMBER
+#
+#Port 22
+#AddressFamily any
+#ListenAddress 0.0.0.0
+#ListenAddress ::
+
+HostKey /etc/ssh/ssh_host_rsa_key
+#HostKey /etc/ssh/ssh_host_dsa_key
+HostKey /etc/ssh/ssh_host_ecdsa_key
+HostKey /etc/ssh/ssh_host_ed25519_key
+
+# Ciphers and keying
+#RekeyLimit default none
+
+# System-wide Crypto policy:
+# If this system is following system-wide crypto policy, the changes to
+# Ciphers, MACs, KexAlgoritms and GSSAPIKexAlgorithsm will not have any
+# effect here. They will be overridden by command-line options passed on
+# the server start up.
+
+```
+
+Exemple del funcionament del servidor
+
+```
+[root@localhost k18:sshd]# ssh local01@172.18.0.4
+local01@172.18.0.4's password: 
+Last login: Wed Feb 27 13:18:02 2019 from 172.18.0.1
+[local01@sshd ~]$ user01@sshd.edt.org
+-bash: user01@sshd.edt.org: command not found
+[local01@sshd ~]$ ssh user01@sshd.edt.org
+user01@sshd.edt.org's password: 
+Last login: Wed Feb 27 13:19:25 2019 from 172.18.0.4
+[user01@sshd ~]$ kinit user02
+Password for user02@EDT.ORG: 
 [user01@sshd ~]$ klist
-Ticket cache: FILE:/tmp/krb5cc_1003_h55yoBfeGG
-Default principal: user01@EDT.ORG
+Ticket cache: FILE:/tmp/krb5cc_1003_6YVbVI3FBz
+Default principal: user02@EDT.ORG
+
 Valid starting     Expires            Service principal
-02/22/19 16:49:35  02/23/19 16:49:35  krbtgt/EDT.ORG@EDT.ORG
-
-[user01@sshd ~]$ ssh user01@sshd.edt.org
-The authenticity of host 'sshd.edt.org (172.21.0.3)' can't be established.
-ECDSA key fingerprint is SHA256:FakX5h5J4mbjss2v3b4F4vqPllFn+AWXLj7f8ivdeAs.
-ECDSA key fingerprint is MD5:bb:50:c9:26:1b:16:df:5c:91:b3:5a:b3:7d:69:82:7a.
-Are you sure you want to continue connecting (yes/no)? yes
-Warning: Permanently added 'sshd.edt.org,172.21.0.3' (ECDSA) to the list of known hosts.
-Last login: Fri Feb 22 16:49:35 2019 from 172.21.0.1
-
-[user01@sshd ~]$ klist
-klist: No credentials cache found (filename: /tmp/krb5cc_1003)
-
-[user01@sshd ~]$ exit
-logout
-Connection to sshd.edt.org closed.
-
-[user01@sshd ~]$ klist 
-Ticket cache: FILE:/tmp/krb5cc_1003_h55yoBfeGG
-Default principal: user01@EDT.ORG
-Valid starting     Expires            Service principal
-02/22/19 16:49:35  02/23/19 16:49:35  krbtgt/EDT.ORG@EDT.ORG
-02/22/19 16:49:56  02/23/19 16:49:35  host/sshd.edt.org@EDT.ORG
-
-[user01@sshd ~]$ ssh user01@sshd.edt.org
-Last login: Fri Feb 22 16:49:56 2019 from 172.21.0.3
+02/27/19 14:19:48  02/28/19 14:19:48  krbtgt/EDT.ORG@EDT.ORG
+[user01@sshd ~]$ ssh user02@sshd.edt.org
+Last login: Wed Feb 27 13:19:59 2019 from 172.18.0.4
 ```
 
-Observeu com en la sessió actual de user01 a més a més del seu ticket té el ticket 
-del servidor sshd, que li permet iniciar sessió ssh de manera desatesa.
+Com podem observar a l'hora de conectarnos com a "user02" no fa falta posar el passwd
+ja que ha actuat el kerberos i ja tenia un access
