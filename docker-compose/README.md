@@ -133,6 +133,144 @@ volumes:
  krb5data: #Declarem el volum al final del fitxer
 ```
 
+#Enxeguem els containers amb els noms que li corresponen amb la configuracio del fitxer
+
+
+```
+version: "2"
+services:
+  kserver:
+    image: raulbaena/k18:kserver
+    container_name: kserver.edt.org
+    hostname: kserver.edt.org
+    volumes: 
+      - "krb5data:/var/kerberos"
+    networks:
+      - mynet
+  sshd:
+    image: raulbaena/k18:sshd
+    container_name: sshd.edt.org
+    hostname: sshd.edt.org
+    networks:
+      - mynet     
+  portainer:
+    image: portainer/portainer
+    ports:
+      - "9000:9000"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - mynet   
+networks:
+ mynet:
+volumes: 
+ krb5data:
+
+[isx53320159@i12 docker-compose]$ docker-compose up -d
+Creating network "dockercompose_mynet" with the default driver
+Creating kserver.edt.org ... 
+Creating dockercompose_portainer_1 ... 
+Creating sshd.edt.org ... 
+Creating kserver.edt.org
+Creating sshd.edt.org
+Creating kserver.edt.org ... done
+```
+
+#Ens conectem al servidor de kerberos y iniciem sessió com administrador
+```
+[isx53320159@i12 docker-compose]$ docker exec -it kserver.edt.org /bin/bash
+[root@kserver docker]# kadmin -p pau
+Authenticating as principal pau with password.
+Password for pau@EDT.ORG: 
+kadmin:  
+kadmin:  listprincs  
+K/M@EDT.ORG
+anna@EDT.ORG
+host/sshd.edt.org@EDT.ORG
+jordi@EDT.ORG
+julia@EDT.ORG
+kadmin/5b5026b10724@EDT.ORG
+kadmin/admin@EDT.ORG
+kadmin/changepw@EDT.ORG
+kiprop/5b5026b10724@EDT.ORG
+krbtgt/EDT.ORG@EDT.ORG
+marta/admin@EDT.ORG
+marta@EDT.ORG
+pau@EDT.ORG
+pere@EDT.ORG
+superuser@EDT.ORG
+user01@EDT.ORG
+user02@EDT.ORG
+user03@EDT.ORGi
+```
+#Eliminem l'usuari03 y afegim dos usuaris nous
+```
+kadmin:  delprinc user03
+Are you sure you want to delete the principal "user03@EDT.ORG"? (yes/no): yes
+Principal "user03@EDT.ORG" deleted.
+Make sure that you have removed this principal from all ACLs before reusing.
+kadmin:  addprinc -pw new01 new01
+WARNING: no policy specified for new01@EDT.ORG; defaulting to no policy
+Principal "new01@EDT.ORG" created.
+kadmin:  addprinc -pw new02 new02  
+WARNING: no policy specified for new02@EDT.ORG; defaulting to no policy
+Principal "new02@EDT.ORG" created.
+kadmin:  q
+```
+#Parem les maquine y les tornem a enxegar, ens contectem al kerberos server y podem observar que els cambis fets anteriorment encara estan
+```
+[isx53320159@i12 docker-compose]$ docker exec -it kserver.edt.org /bin/bash
+[root@kserver docker]# kadmin -p pau
+Authenticating as principal pau with password.
+Password for pau@EDT.ORG: 
+kadmin:  listprincs
+K/M@EDT.ORG
+anna@EDT.ORG
+host/sshd.edt.org@EDT.ORG
+jordi@EDT.ORG
+julia@EDT.ORG
+kadmin/5b5026b10724@EDT.ORG
+kadmin/admin@EDT.ORG
+kadmin/changepw@EDT.ORG
+kiprop/5b5026b10724@EDT.ORG
+krbtgt/EDT.ORG@EDT.ORG
+marta/admin@EDT.ORG
+marta@EDT.ORG
+new01@EDT.ORG
+new02@EDT.ORG
+pau@EDT.ORG
+pere@EDT.ORG
+superuser@EDT.ORG
+user01@EDT.ORG
+user02@EDT.ORG
+user03@EDT.ORG
+kadmin:  
+```
+```
+Pegar imagen de docker documentation del funcionamento del bind mount
+```
+
+#On se guarden els volume mount? a /var/lib/docker/volumes
+
+```
+[root@i12 ~]# cd /var/lib/docker/volumes/
+[root@i12 volumes]# ll
+total 44
+drwxr-xr-x. 3 root root  4096 Feb 28 09:39 4db41225a25e5e1fc8ce6f144d7d6c6229743eef13a63852b043bc7f834b902c
+drwxr-xr-x. 3 root root  4096 Feb 28 09:33 51757a6b1df40c08003a3c87788ff84e373f0422ca5c5a101bbeccdba720407c
+drwxr-xr-x. 3 root root  4096 Feb 28 09:28 b1c2e26de88fcb696b00f8839a8b065710c822d280770d3c67000f8dfdc03f7b
+drwxr-xr-x. 3 root root  4096 Feb 28 09:13 dd94fefe56471508ad7aa6c891a67f6ba857cb946cc6a6534e747604e0acbd48
+drwxr-xr-x. 3 root root  4096 Feb 28 09:28 dockercompose_krb5data
+-rw-------. 1 root root 32768 Feb 28 09:39 metadata.db
+```
+
+#Si entrem al directori amb el nom d'aquestes maquines estaran els nostres bind mounts
+```
+[root@i12 volumes]# ll dockercompose_krb5data/_data/
+total 8
+drwxr-xr-x. 3 root root 4096 Aug 21  2018 krb5
+drwxr-xr-x. 2 root root 4096 Feb 28 09:28 krb5kdc
+```
 
 
 

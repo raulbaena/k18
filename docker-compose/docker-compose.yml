@@ -2,12 +2,16 @@ version: "2"
 services:
   kserver:
     image: raulbaena/k18:kserver
+    container_name: kserver.edt.org
+    hostname: kserver.edt.org
     volumes: 
       - "krb5data:/var/kerberos"
     networks:
       - mynet
   sshd:
     image: raulbaena/k18:sshd
+    container_name: sshd.edt.org
+    hostname: sshd.edt.org
     networks:
       - mynet     
   portainer:
