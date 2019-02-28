@@ -247,7 +247,7 @@ user03@EDT.ORG
 kadmin:  
 ```
 ```
-Pegar imagen de docker documentation del funcionamento del bind mount
+![Screenshot](image2.png)
 ```
 
 #On se guarden els volume mount? a /var/lib/docker/volumes
