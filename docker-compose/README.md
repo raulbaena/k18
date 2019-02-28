@@ -321,7 +321,7 @@ Creating dockercompose_portainer_1
 Creating sshd.edt.org ... done
 ```
 
-#Stack
+#Stack/Swarm
 
 #Execucio del stack deploy (es lo mateix de docker compose, pero un stack s'executa en un cnjunt d'ordinadors)
 
@@ -458,3 +458,24 @@ NAME                SERVICES            ORCHESTRATOR
 myapp               3                   Swarm
 ```
 
+#Treure el swarm
+```
+docker swarm leave --force
+```
+
+#Mirar tots els equips que pertanyen al swarm amb el numero de nodes 
+```
+172.0.0.1:port
+```
+
+#Sortir ordenadament del swarm
+```
+[isx53320159@i12 docker-compose]$ docker stack rm myapp 
+Removing service myapp_kserver
+Removing service myapp_sshd
+Removing service myapp_visualizer
+Removing network myapp_mynet
+[isx53320159@i12 docker-compose]$ docker swarm leave --force
+Node left the swarm.
+[isx53320159@i12 docker-compose]$ 
+```
