@@ -1,0 +1,12 @@
+version: "2"
+services:
+  kserver:
+    image: raulbaena/k18:kserver
+    networks:
+      - mynet
+  sshd:
+    image: raulbaena/k18:sshd
+    networks:
+      - mynet        
+networks:
+ mynet:
