@@ -101,7 +101,7 @@ cb506594a4f1        raulbaena/k18:sshd      "/opt/docker/start..."   3 seconds a
 
 ##Entrem amb el navegador a locahost:9000 y veurem else stack que tenim
 ```
-![alt text](https://github.com/raulbaena/k18/blob/master/docker-compose/image1.png)
+![alt_text](https://github.com/raulbaena/k18/blob/master/docker-compose/image1.png)
 ```
 
 #Named volume
@@ -330,4 +330,131 @@ Creating sshd.edt.org ... done
 https://docs.docker.com/install/linux/docker-ce/fedora/
 ```
 
+#Iniciar swarm
+```
+[isx53320159@i12 docker-compose]$ docker swarm init
+Swarm initialized: current node (rp97eoi5eml98ji7x9iar06n8) is now a manager.
+
+To add a worker to this swarm, run the following command:
+
+    docker swarm join --token SWMTKN-1-18xg1jh78vix2r2w0xr54qoo11eeg6tqhe8zex8e77s3zj6v3f-6um415l1ysqydqgpeo19dlya5 192.168.2.42:2377
+
+To add a manager to this swarm, run 'docker swarm join-token manager' and follow the instructions.
+```
+#Qualsevol que tingui el token generat et podras adjuntar en el swarm creat
+
+#Llistar els nodes o treballadors y managers que tnim al swarm
+```
+[isx53320159@i12 docker-compose]$ docker node ls
+ID                            HOSTNAME            STATUS              AVAILABILITY        MANAGER STATUS      ENGINE VERSION
+rp97eoi5eml98ji7x9iar06n8 *   i12                 Ready               Active              Leader              18.09.0
+```
+
+#Creem el stack
+```
+[isx53320159@i12 docker-compose]$ docker stack deploy -c docker-compose.yml myapp
+Ignoring deprecated options:
+
+container_name: Setting the container name is not supported.
+
+Creating network myapp_mynet
+Creating service myapp_sshd
+Creating service myapp_portainer
+Creating service myapp_kserver
+```
+#Exemple a visualizer
+```
+version: "3"
+services:
+  kserver:
+    image: raulbaena/k18:kserver
+    container_name: kserver.edt.org
+    hostname: kserver.edt.org
+    deploy:
+      replicas: 3
+    volumes: 
+      - "krb5data:/var/kerberos"
+    networks:
+      - mynet
+  sshd:
+    image: raulbaena/k18:sshd
+    container_name: sshd.edt.org
+    hostname: sshd.edt.org
+    networks:
+      - mynet     
+  portainer:
+    image: portainer/portainer
+    ports:
+      - "9000:9000"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - mynet 
+  visualizer:
+    image: dockersamples/visualizer:stable
+    ports:
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - mynet 
+networks:
+ mynet:
+volumes: 
+ krb5data:
+```
+
+#Creem l'stack
+```
+[isx53320159@i12 docker-compose]$ docker stack deploy -c docker-compose.yml myapp
+Ignoring deprecated options:
+
+container_name: Setting the container name is not supported.
+
+Creating network myapp_mynet
+Creating service myapp_portainer
+Creating service myapp_visualizer
+Creating service myapp_kserver
+Creating service myapp_sshd
+```
+
+#Mirem les maquines enxegades
+```
+[isx53320159@i12 docker-compose]$ docker ps
+CONTAINER ID        IMAGE                             COMMAND                  CREATED              STATUS              PORTS               NAMES
+617e9a6ed0c7        dockersamples/visualizer:stable   "npm start"              About a minute ago   Up About a minute   8080/tcp            myapp_visualizer.1.1e8gs3hq4d2soaumdpwu981eg
+56c9a94e30d3        raulbaena/k18:sshd                "/opt/docker/startup…"   About a minute ago   Up About a minute                       myapp_sshd.1.mip10ji4rnir1dxyh61ig6p4j
+610cbf39be8d        raulbaena/k18:kserver             "/opt/docker/startup…"   About a minute ago   Up About a minute                       myapp_kserver.1.7g4p9pdcxl2rqueq2ivnmm28y
+0e5c3f5692ee        raulbaena/k18:kserver             "/opt/docker/startup…"   About a minute ago   Up About a minute                       myapp_kserver.2.xrwkpn6do9p7y689cztwf73ai
+7bd7d212dfff        raulbaena/k18:kserver             "/opt/docker/startup…"   About a minute ago   Up About a minute                       myapp_kserver.3.x4g47v6cjjmbpn2kcmlpyr6xn
+ceb975162293        portainer/portainer:latest        "/portainer"             About a minute ago   Up 59 seconds       9000/tcp            myapp_portainer.1.y67j0nge1hpwsunpfupktrl4j
+```
+
+#Mirem l'stack
+```
+[isx53320159@i12 docker-compose]$ docker stack ps myapp 
+ID                  NAME                 IMAGE                             NODE                DESIRED STATE       CURRENT STATE                ERROR               PORTS
+mip10ji4rnir        myapp_sshd.1         raulbaena/k18:sshd                i12                 Running             Running about a minute ago                       
+7g4p9pdcxl2r        myapp_kserver.1      raulbaena/k18:kserver             i12                 Running             Running about a minute ago                       
+1e8gs3hq4d2s        myapp_visualizer.1   dockersamples/visualizer:stable   i12                 Running             Running about a minute ago                       
+y67j0nge1hpw        myapp_portainer.1    portainer/portainer:latest        i12                 Running             Running about a minute ago                       
+xrwkpn6do9p7        myapp_kserver.2      raulbaena/k18:kserver             i12                 Running             Running about a minute ago                       
+x4g47v6cjjmb        myapp_kserver.3      raulbaena/k18:kserver             i12                 Running             Running about a minute ago    
+```
+
+#Llistar els serveis que tenim enxegats
+```
+[isx53320159@i12 docker-compose]$ docker service ls
+ID                  NAME                MODE                REPLICAS            IMAGE                             PORTS
+xoontwqhda8e        myapp_kserver       replicated          3/3                 raulbaena/k18:kserver             
+weqtnoiylms0        myapp_sshd          replicated          1/1                 raulbaena/k18:sshd                
+ms8hev1qeinh        myapp_visualizer    replicated          1/1                 dockersamples/visualizer:stable   *:8080->8080/tcp
+```
+
+#Llistar els stacks que amb el numero de serveis
+```
+[isx53320159@i12 docker-compose]$ docker stack ls
+NAME                SERVICES            ORCHESTRATOR
+myapp               3                   Swarm
+```
 
