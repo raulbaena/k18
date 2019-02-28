@@ -101,7 +101,7 @@ cb506594a4f1        raulbaena/k18:sshd      "/opt/docker/start..."   3 seconds a
 
 ##Entrem amb el navegador a locahost:9000 y veurem else stack que tenim
 ```
-Poner imagen
+![alt text](https://github.com/raulbaena/k18/blob/master/docker-compose/image1.png)
 ```
 
 #Named volume
@@ -272,7 +272,62 @@ drwxr-xr-x. 3 root root 4096 Aug 21  2018 krb5
 drwxr-xr-x. 2 root root 4096 Feb 28 09:28 krb5kdc
 ```
 
+#Exemple D
 
+#Editem el fitxer docker-compose y afegim la linea deploy y cambiem la versio de compose
+```
+version: "3"
+services:
+  kserver:
+    image: raulbaena/k18:kserver
+    container_name: kserver.edt.org
+    hostname: kserver.edt.org
+    deploy:
+      replicas: 3
+    volumes: 
+      - "krb5data:/var/kerberos"
+    networks:
+      - mynet
+  sshd:
+    image: raulbaena/k18:sshd
+    container_name: sshd.edt.org
+    hostname: sshd.edt.org
+    networks:
+      - mynet     
+  portainer:
+    image: portainer/portainer
+    ports:
+      - "9000:9000"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - mynet   
+networks:
+ mynet:
+volumes: 
+ krb5data:
+```
 
+#Executem les maquines
+```
+[isx53320159@i12 docker-compose]$ docker-compose up -d
+WARNING: Some services (kserver) use the 'deploy' key, which will be ignored. Compose does not support 'deploy' configuration - use `docker stack deploy` to deploy to a swarm.
+Creating network "dockercompose_mynet" with the default driver
+Creating kserver.edt.org ... 
+Creating sshd.edt.org ... 
+Creating dockercompose_portainer_1 ... 
+Creating kserver.edt.org
+Creating dockercompose_portainer_1
+Creating sshd.edt.org ... done
+```
+
+#Stack
+
+#Execucio del stack deploy (es lo mateix de docker compose, pero un stack s'executa en un cnjunt d'ordinadors)
+
+#Cada vez que creemos una nueva maqina de amazon tendremos que instslar docker de nuevo, mirar como se hace en
+```
+https://docs.docker.com/install/linux/docker-ce/fedora/
+```
 
 

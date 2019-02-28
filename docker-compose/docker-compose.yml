@@ -1,9 +1,11 @@
-version: "2"
+version: "3"
 services:
   kserver:
     image: raulbaena/k18:kserver
     container_name: kserver.edt.org
     hostname: kserver.edt.org
+    deploy:
+      replicas: 3
     volumes: 
       - "krb5data:/var/kerberos"
     networks:
